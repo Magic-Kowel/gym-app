@@ -1,69 +1,111 @@
-import Image from "next/image";
+"use client"
+import { useState } from "react";
+import { useFormik } from 'formik';
+import { useRouter } from 'next/navigation';
+import * as Yup from 'yup';
+import {
+    Button, Card, CardActions, CardContent, Grid, Typography, TextField,
+    Box,
+    IconButton
+} from "@mui/material";
+import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { LoginType } from "./types/user";
+import { useAppDispatch, useAppSelector } from './store/hooks'
+import { login } from "./store/Slices/userSlice";
+function Homepage() {
+    const dispatch = useAppDispatch();
+    const router = useRouter();
+    const handleValidate = (token: string) => {
+        document.cookie = `token=${token}; path=/; max-age=86400; secure; samesite=lax`;
+        router.refresh();
+        router.push('/users');
+    }
+    const loginSchema = Yup.object().shape({
+        email: Yup.string().email("Correo inválido").required("Este campo es requerido"),
+        password: Yup.string().required("Este campo es requerido"),
+    });
+    const formik = useFormik<LoginType>({
+        initialValues: {
+            email: "",
+            password: ""
+        },
+        enableReinitialize: false, // ✅ Reemplaza al useEffect para actualizar valores
+        validationSchema: loginSchema,
+        onSubmit: async (values) => {
+            const response = await dispatch(login(values));
+            if (response.payload.auth) {
+                handleValidate(response.payload.token);
+            }
+            console.log(response);
+        },
+    });
+    const [showPassword, setShowPassword] = useState<boolean>(false)
+    return (
+        <>
+            <Grid container spacing={2}
+                sx={{
+                    justifyContent: "center",
+                    alignItems: "center"
+                }}>
+                <Grid size={{ sm: 12, md: 8, lg: 4 }}>
+                    <Card sx={{ boxShadow: '0 8px 24px rgba(0,0,0,0.94)', }}>
+                        <form
+                            autoComplete='off'
+                            onSubmit={formik.handleSubmit}
+                        >
+                            <CardContent>
+                                <Typography
+                                    sx={{ textAlign: "center" }}
+                                    gutterBottom
+                                    variant="h5"
+                                    component="div"
+                                >
+                                    Login
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid size={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="Usuario"
+                                            name="email"
+                                            variant="outlined"
+                                            value={formik.values.email}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            error={formik.touched.email && Boolean(formik.errors.email)}
+                                            helperText={formik.touched.email && formik.errors.email}
+                                        />
+                                    </Grid>
+                                    <Grid size={12}>
+                                        <Box sx={{ display: "flex" }}>
+                                            <TextField
+                                                fullWidth
+                                                label="Contraseña"
+                                                name="password"
+                                                variant="outlined"
+                                                value={formik.values.password}
+                                                onChange={formik.handleChange}
+                                                onBlur={formik.handleBlur}
+                                                error={formik.touched.password && Boolean(formik.errors.password)}
+                                                helperText={formik.touched.password && formik.errors.password}
+                                            />
+                                            <IconButton aria-label="show" size="large" onClick={() => setShowPassword((prev) => !prev)}>
+                                                {showPassword ? <RemoveRedEyeIcon /> : <VisibilityOffIcon />}
+                                            </IconButton>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </CardContent>
+                            <CardActions>
+                                <Button fullWidth variant="contained" type="submit">Login</Button>
+                            </CardActions>
+                        </form>
+                    </Card>
+                </Grid>
+            </Grid>
+        </>
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    )
 }
+export default Homepage;
